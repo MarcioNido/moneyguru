@@ -14,39 +14,78 @@ class Form {
         this.resource = null;
         this.key = null;
 
-        this.currentPage = null;
+        this.page = 1;
+        this.filter = {};
         this.lastPage = null;
 
         this.errors = new FormError();
+
+        window.addEventListener('keyup', this.navigate);
+
+        window.form = this;
     }
 
     /**
      * @todo check how will work pagination here
      * @param page
      */
-    list(page)
+    list()
     {
-        if (page === undefined) {
-            page = 1;
-        }
+        var params = {};
 
-        axios.get(this.resource + '?page=' + page)
+        params.page = this.page;
+        params.filter = this.filter;
+
+        axios.get(this.resource, {params: params})
             .then(response => {
                 this.collection = response.data.data;
-                this.currentPage = response.data.current_page;
+                this.page = response.data.current_page;
                 this.lastPage = response.data.last_page;
             })
 
     }
 
+    navigate(event) {
+
+        console.log('Key Pressed: ' + event.key);
+        console.log('I am here ...');
+
+        if (window.form.editMode == false) {
+            if (event.key == 'PageDown') {
+                window.form.nextPage();
+            }
+
+            if (event.key == 'PageUp') {
+                window.form.prevPage();
+            }
+        } else {
+            console.log('Edit mode is true? ' + window.form.editMode);
+        }
+
+    }
+
     nextPage()
     {
-        this.list(this.currentPage + 1);
+        if (this.page < this.lastPage) {
+
+            this.page = this.page + 1;
+            this.list();
+
+        } else {
+            window.alert('Last Page');
+        }
     }
 
     prevPage()
     {
-        this.list(this.currentPage - 1);
+        if (this.page > 1) {
+
+            this.page = this.page - 1;
+            this.list();
+
+        } else {
+            window.alert('First Page');
+        }
     }
 
 

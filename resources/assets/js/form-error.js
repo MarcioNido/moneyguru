@@ -19,7 +19,9 @@ class FormError {
 
     has(field)
     {
-        return this.errors.hasOwnProperty(field);
+        if (this.errors) {
+            return this.errors.hasOwnProperty(field);
+        }
     }
 
     get(field)

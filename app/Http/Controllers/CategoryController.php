@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
@@ -16,6 +17,42 @@ class CategoryController extends Controller
     public function index()
     {
         return Category::paginate(10);
+    }
+
+
+    /**
+     * Special dropdown with groups
+     *
+     * @return JsonResponse dropdown list
+     */
+    public function dropDown()
+    {
+
+        $result = [];
+        $level1 = Category::where('level2', 0)->orderBy('level1')->get();
+        foreach($level1 as $l1) {
+
+            $result[$l1->level1 . ' - '.$l1->name] = [];
+            $level2 = Category::where('level1', $l1->level1)->where('level3', 0)->orderBy('level2')->get();
+
+            foreach($level2 as $l2) {
+
+                $level3 = Category::where('level1', $l2->level1)->where('level2', $l2->level2)->where('level3', '<>', 0)->orderBy('level3')->get();
+
+                foreach ($level3 as $l3) {
+
+                    $result[$l2->level1 . '.' . $l2->level2 . ' - ' . $l2->name][$l3->id] = $l3->name;
+
+                }
+
+
+            }
+
+
+        }
+
+        return JsonResponse::create(['data' => $result]);
+
     }
 
     /**

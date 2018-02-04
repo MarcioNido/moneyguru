@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Balance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BalanceController extends Controller
 {
@@ -27,6 +28,54 @@ class BalanceController extends Controller
             ->get();
 
         return count($balance) > 0 ? $balance : JsonResponse::create(['status' => 'no balance'], 404);
+    }
+
+
+    public function reCalc(Request $request)
+    {
+        $bank_account_id = $request->get('bank_account_id');
+
+        DB::delete('DELETE FROM balances WHERE bank_account_id = ?', [
+            $bank_account_id
+        ]);
+
+        $finances = DB::select('SELECT * FROM finances WHERE bank_account_id = ? AND deleted_at IS NULL ORDER BY date', [
+            $bank_account_id
+        ]);
+
+
+        if ($finances) {
+
+            $date = null;
+            $balance = 0;
+
+            foreach($finances as $finance) {
+
+                if ($date && $date !== $finance->date) {
+                    DB::insert('INSERT INTO balances (bank_account_id, date, balance) VALUES (?,?,?)', [
+                        $bank_account_id,
+                        $date,
+                        $balance
+                    ]);
+                }
+
+                $date = $finance->date;
+
+                $balance += $finance->dc == 'C' ? $finance->amount : $finance->amount * -1;
+
+            }
+
+            DB::insert('INSERT INTO balances (bank_account_id, date, balance) VALUES (?,?,?)', [
+                $bank_account_id,
+                $date,
+                $balance
+            ]);
+
+
+        }
+
+        return JsonResponse::create(['status' => 'success']);
+
     }
 
     /**

@@ -5480,10 +5480,15 @@ var Form = function () {
         this.resource = null;
         this.key = null;
 
-        this.currentPage = null;
+        this.page = 1;
+        this.filter = {};
         this.lastPage = null;
 
         this.errors = new __WEBPACK_IMPORTED_MODULE_0__form_error__["a" /* default */]();
+
+        window.addEventListener('keyup', this.navigate);
+
+        window.form = this;
     }
 
     /**
@@ -5494,28 +5499,60 @@ var Form = function () {
 
     _createClass(Form, [{
         key: 'list',
-        value: function list(page) {
+        value: function list() {
             var _this = this;
 
-            if (page === undefined) {
-                page = 1;
-            }
+            var params = {};
 
-            axios.get(this.resource + '?page=' + page).then(function (response) {
+            params.page = this.page;
+            params.filter = this.filter;
+
+            axios.get(this.resource, { params: params }).then(function (response) {
                 _this.collection = response.data.data;
-                _this.currentPage = response.data.current_page;
+                _this.page = response.data.current_page;
                 _this.lastPage = response.data.last_page;
             });
         }
     }, {
+        key: 'navigate',
+        value: function navigate(event) {
+
+            console.log('Key Pressed: ' + event.key);
+            console.log('I am here ...');
+
+            if (window.form.editMode == false) {
+                if (event.key == 'PageDown') {
+                    window.form.nextPage();
+                }
+
+                if (event.key == 'PageUp') {
+                    window.form.prevPage();
+                }
+            } else {
+                console.log('Edit mode is true? ' + window.form.editMode);
+            }
+        }
+    }, {
         key: 'nextPage',
         value: function nextPage() {
-            this.list(this.currentPage + 1);
+            if (this.page < this.lastPage) {
+
+                this.page = this.page + 1;
+                this.list();
+            } else {
+                window.alert('Last Page');
+            }
         }
     }, {
         key: 'prevPage',
         value: function prevPage() {
-            this.list(this.currentPage - 1);
+            if (this.page > 1) {
+
+                this.page = this.page - 1;
+                this.list();
+            } else {
+                window.alert('First Page');
+            }
         }
     }, {
         key: 'create',
@@ -51987,7 +52024,9 @@ var FormError = function () {
     }, {
         key: "has",
         value: function has(field) {
-            return this.errors.hasOwnProperty(field);
+            if (this.errors) {
+                return this.errors.hasOwnProperty(field);
+            }
         }
     }, {
         key: "get",
@@ -53156,7 +53195,7 @@ exports = module.exports = __webpack_require__(5)(false);
 
 
 // module
-exports.push([module.i, "\ndiv.list-row {\n    padding: 5px;\n}\ndiv.edit-row {\n    padding: 15px 5px 0;\n    border-top: 1px solid #d3e0e9;\n}\ndiv.list-row:hover {\n    background-color: #f7f7f7;\n}\ndiv.list-row.list-row-delete {\n    color: #bf5329;\n}\n", ""]);
+exports.push([module.i, "\ndiv.list-row {\n    padding: 5px;\n}\ndiv.edit-row {\n    padding: 15px 5px 0;\n    border-top: 1px solid #d3e0e9;\n}\ndiv.list-row:hover {\n    background-color: #f7f7f7;\n}\ndiv.list-row.list-row-delete {\n    color: #bf5329;\n}\n.btn {\n    padding: 1px 12px;\n}\n", ""]);
 
 // exports
 
@@ -53337,6 +53376,38 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 
 
@@ -53346,9 +53417,18 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         return {
             form: new __WEBPACK_IMPORTED_MODULE_0__form__["a" /* default */](),
             startDate: moment().startOf('month').format('YYYY-MM-DD'),
-            startBalance: null,
             endDate: moment().endOf('month').format('YYYY-MM-DD'),
-            endBalance: null
+            startBalance: null,
+            endBalance: null,
+
+            bankAccountsList: null,
+            categoriesList: null,
+            monthList: null,
+            yearList: null,
+
+            filterBankAccountId: 1,
+            filterMonth: moment().format('MM'),
+            filterYear: moment().format('YYYY')
         };
     },
     created: function created() {
@@ -53362,45 +53442,60 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             description: null,
             dc: null,
             date: null,
-            amount: null
+            amount: null,
+            day: null
         };
 
         this.bankAccountId = 1;
+        this.filterChange();
+        this.initialBalance();
+        this.finalBalance();
 
-        this.form.list();
+        //            window.addEventListener('keyup', this.navigate);
 
-        this.balance();
-
-        window.addEventListener('keyup', this.navigate);
+        this.loadBankAccountsList();
+        this.loadCategoriesList();
+        this.loadMonthList();
+        this.loadYearList();
     },
 
 
     methods: {
+        //
+        //            navigate: function (event) {
+        //                console.log('Key Pressed: ' + event.key);
+        //
+        //                if (this.form.editMode == false) {
+        //                    if (event.key == 'PageDown') {
+        //                        this.form.nextPage();
+        //                    }
+        //
+        //                    if (event.key == 'PageUp') {
+        //                        this.form.prevPage();
+        //                    }
+        //                }
+        //
+        //            },
 
-        navigate: function navigate(event) {
-            console.log('Key Pressed: ' + event.key);
+        edit: function edit(index) {
+            this.form.cancel();
 
-            if (this.form.editMode == false) {
-                if (event.key == 'PageDown') {
-                    if (this.form.currentPage < this.form.lastPage) {
-                        this.form.nextPage();
-                    } else {
-                        window.alert('Last Page');
-                    }
-                }
+            this.form.editMode = true;
+            this.form.editIndex = index;
 
-                if (event.key == 'PageUp') {
-                    if (this.form.currentPage > 1) {
-                        this.form.prevPage();
-                    } else {
-                        window.alert('First Page');
-                    }
-                }
-            }
+            var _self = this;
+            Object.keys(this.form.fields).map(function (key) {
+                _self.form.fields[key] = _self.form.collection[index][key];
+            });
+
+            this.form.fields.day = moment(this.form.fields.date).format('DD');
         },
-
         save: function save() {
             var _this = this;
+
+            // append month and year to the date
+            this.form.fields.date = this.filterYear + '-' + this.filterMonth + '-' + this.form.fields.day;
+            this.form.fields.bank_account_id = this.filterBankAccountId;
 
             if (this.form.editIndex !== null) {
                 // update
@@ -53408,6 +53503,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
                 axios.put(this.form.resource + '/' + this.form.fields[this.form.key], this.form.fields).then(function (response) {
                     _this.form.editMode = false;
                     _this.form.collection[_this.form.editIndex] = response.data;
+                    _this.finalBalance();
                 }).catch(function (error) {
                     _this.form.errors.set(error.response.data);
                 });
@@ -53417,25 +53513,135 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
                 axios.post(this.form.resource, this.form.fields).then(function (response) {
                     _this.form.collection.push(response.data);
                     _this.form.editMode = false;
+                    _this.finalBalance();
                 }).catch(function (error) {
                     _this.form.errors.set(error.response.data);
                 });
             }
         },
-        balance: function balance() {
+        initialBalance: function initialBalance() {
+            var _this2 = this;
 
-            var self = this;
-            axios.get('api/v1/balances', {
-                params: {
-                    filter: {
-                        bank_account_id: self.bankAccountId,
-                        date: moment(self.startDate).subtract(1, 'days').format('YYYY-MM-DD')
+            console.log('initial balance: ' + this.startDate);
+
+            var date = moment(this.startDate).subtract(1, 'days').format('YYYY-MM-DD');
+            console.log('balance initial date: ' + date);
+            this.balance(date).then(function (data) {
+                console.log(data);
+                _this2.startBalance = data[0].balance;
+            }).catch(function (error) {
+                console.log(error);
+            });
+        },
+        finalBalance: function finalBalance() {
+            var _this3 = this;
+
+            console.log('final balance: ' + this.endDate);
+            this.balance(this.endDate).then(function (data) {
+                _this3.endBalance = data[0].balance;
+            }).catch(function (error) {
+                console.log(error);
+            });
+        },
+        balance: function balance(date) {
+            var _this4 = this;
+
+            return new Promise(function (resolve, reject) {
+                axios.get('api/v1/balances', {
+                    params: {
+                        filter: {
+                            bank_account_id: _this4.bankAccountId,
+                            date: date
+                        }
                     }
-                }
-            }).then(function (response) {
-                console.log(response);
+                }).then(function (response) {
+                    resolve(response.data);
+                }).catch(function (error) {
+                    reject(error.response.data);
+                });
+            });
+        },
+        loadBankAccountsList: function loadBankAccountsList() {
+            var _this5 = this;
+
+            axios.get('api/v1/bank-accounts').then(function (response) {
+                _this5.bankAccountsList = response.data.data;
+            }).catch(function (error) {
+                console.log(error.response.data);
+            });
+        },
+        loadCategoriesList: function loadCategoriesList() {
+            var _this6 = this;
+
+            axios.get('api/v1/categories/dropdown').then(function (response) {
+                _this6.categoriesList = response.data.data;
+            }).catch(function (error) {
+                console.log(error.response.data);
+            });
+        },
+        loadMonthList: function loadMonthList() {
+            this.monthList = {
+                '01': 'January',
+                '02': 'February',
+                '03': 'March',
+                '04': 'April',
+                '05': 'May',
+                '06': 'June',
+                '07': 'July',
+                '08': 'August',
+                '09': 'September',
+                '10': 'October',
+                '11': 'November',
+                '12': 'December'
+            };
+        },
+        loadYearList: function loadYearList() {
+            this.yearList = {
+                2017: 2017,
+                2018: 2018,
+                2019: 2019,
+                2020: 2020,
+                2021: 2021,
+                2022: 2022
+            };
+        },
+        filterChange: function filterChange() {
+            this.form.filter = {
+                'bank_account_id': this.filterBankAccountId,
+                'start_date': moment(this.filterYear + '-' + this.filterMonth).startOf('month').format('YYYY-MM-DD'),
+                'end_date': moment(this.filterYear + '-' + this.filterMonth).endOf('month').format('YYYY-MM-DD')
+            };
+            this.form.page = 1;
+            this.form.list();
+        },
+        confirmDelete: function confirmDelete() {
+            var _this7 = this;
+
+            axios.delete(this.form.resource + '/' + this.form.fields[this.form.key]).then(function (response) {
+                _this7.form.collection.splice(_this7.form.deleteIndex, 1);
+                _this7.form.cancel();
+                _this7.finalBalance();
+            }).catch(function (error) {
+                console.log(error.response.data);
             });
         }
+    },
+
+    filters: {
+
+        day: function day(value) {
+            return moment(value).format('DD');
+        },
+
+        currency: function currency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
     }
 
 });
@@ -53453,37 +53659,223 @@ var render = function() {
       _c("div", { staticClass: "col-md-12" }, [
         _c("div", { staticClass: "panel panel-default" }, [
           _c("div", { staticClass: "panel-heading" }, [
-            _c("div", { staticClass: "row" }, [
-              _vm._m(0),
-              _vm._v(" "),
-              _c(
-                "div",
-                {
-                  staticClass: "col-md-3",
-                  staticStyle: { "text-align": "right" }
-                },
-                [
-                  _c(
-                    "button",
-                    {
-                      staticClass: "btn btn-primary",
-                      attrs: { href: "#" },
-                      on: {
-                        click: function($event) {
-                          $event.preventDefault()
-                          _vm.form.create($event)
+            _c(
+              "form",
+              {
+                attrs: { action: "#" },
+                on: {
+                  submit: function($event) {
+                    $event.preventDefault()
+                    _vm.filter($event)
+                  }
+                }
+              },
+              [
+                _c("div", { staticClass: "row" }, [
+                  _c("div", { staticClass: "form-group col-md-3" }, [
+                    _c(
+                      "label",
+                      { staticClass: "control-label", attrs: { for: "date" } },
+                      [_vm._v("Bank Account")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "select",
+                      {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.filterBankAccountId,
+                            expression: "filterBankAccountId"
+                          }
+                        ],
+                        staticClass: "form-control",
+                        on: {
+                          change: [
+                            function($event) {
+                              var $$selectedVal = Array.prototype.filter
+                                .call($event.target.options, function(o) {
+                                  return o.selected
+                                })
+                                .map(function(o) {
+                                  var val = "_value" in o ? o._value : o.value
+                                  return val
+                                })
+                              _vm.filterBankAccountId = $event.target.multiple
+                                ? $$selectedVal
+                                : $$selectedVal[0]
+                            },
+                            _vm.filterChange
+                          ]
                         }
-                      }
+                      },
+                      _vm._l(_vm.bankAccountsList, function(
+                        bankAccount,
+                        index
+                      ) {
+                        return _c(
+                          "option",
+                          { domProps: { value: bankAccount.id } },
+                          [
+                            _vm._v(
+                              "\n                                        " +
+                                _vm._s(bankAccount.name) +
+                                "\n                                    "
+                            )
+                          ]
+                        )
+                      })
+                    )
+                  ]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "form-group col-md-2" }, [
+                    _c(
+                      "label",
+                      {
+                        staticClass: "control-label",
+                        attrs: { for: "filterMonth" }
+                      },
+                      [_vm._v("Month")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "select",
+                      {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.filterMonth,
+                            expression: "filterMonth"
+                          }
+                        ],
+                        staticClass: "form-control",
+                        attrs: { id: "filterMonth" },
+                        on: {
+                          change: [
+                            function($event) {
+                              var $$selectedVal = Array.prototype.filter
+                                .call($event.target.options, function(o) {
+                                  return o.selected
+                                })
+                                .map(function(o) {
+                                  var val = "_value" in o ? o._value : o.value
+                                  return val
+                                })
+                              _vm.filterMonth = $event.target.multiple
+                                ? $$selectedVal
+                                : $$selectedVal[0]
+                            },
+                            _vm.filterChange
+                          ]
+                        }
+                      },
+                      _vm._l(_vm.monthList, function(month, index) {
+                        return _c("option", { domProps: { value: index } }, [
+                          _vm._v(
+                            "\n                                        " +
+                              _vm._s(month) +
+                              "\n                                    "
+                          )
+                        ])
+                      })
+                    )
+                  ]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "form-group col-md-2" }, [
+                    _c(
+                      "label",
+                      {
+                        staticClass: "control-label",
+                        attrs: { for: "filterYear" }
+                      },
+                      [_vm._v("Year")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "select",
+                      {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.filterYear,
+                            expression: "filterYear"
+                          }
+                        ],
+                        staticClass: "form-control",
+                        attrs: { id: "filterYear" },
+                        on: {
+                          change: [
+                            function($event) {
+                              var $$selectedVal = Array.prototype.filter
+                                .call($event.target.options, function(o) {
+                                  return o.selected
+                                })
+                                .map(function(o) {
+                                  var val = "_value" in o ? o._value : o.value
+                                  return val
+                                })
+                              _vm.filterYear = $event.target.multiple
+                                ? $$selectedVal
+                                : $$selectedVal[0]
+                            },
+                            _vm.filterChange
+                          ]
+                        }
+                      },
+                      _vm._l(_vm.yearList, function(year, index) {
+                        return _c("option", { domProps: { value: index } }, [
+                          _vm._v(
+                            "\n                                        " +
+                              _vm._s(year) +
+                              "\n                                    "
+                          )
+                        ])
+                      })
+                    )
+                  ]),
+                  _vm._v(" "),
+                  _c(
+                    "div",
+                    {
+                      staticClass: "col-md-5",
+                      staticStyle: { "text-align": "right" }
                     },
                     [
-                      _vm._v(
-                        "\n                                    New Entry\n                                "
+                      _c("div", { staticStyle: { "margin-bottom": "5px" } }, [
+                        _vm._v(
+                          "Page " +
+                            _vm._s(_vm.form.page) +
+                            " / " +
+                            _vm._s(_vm.form.lastPage)
+                        )
+                      ]),
+                      _vm._v(" "),
+                      _c(
+                        "button",
+                        {
+                          staticClass: "btn btn-primary",
+                          attrs: { href: "#" },
+                          on: {
+                            click: function($event) {
+                              $event.preventDefault()
+                              _vm.form.create($event)
+                            }
+                          }
+                        },
+                        [
+                          _vm._v(
+                            "\n                                    New Entry\n                                "
+                          )
+                        ]
                       )
                     ]
                   )
-                ]
-              )
-            ])
+                ])
+              ]
+            )
           ]),
           _vm._v(" "),
           _c(
@@ -53499,45 +53891,52 @@ var render = function() {
                       _vm.form.deleteIndex == index ? " list-row-delete" : ""
                   },
                   [
-                    _c("div", { staticClass: "col-md-2" }, [
+                    _c("div", { staticClass: "col-md-1" }, [
                       _vm._v(
-                        "\n                                " +
-                          _vm._s(collection.date) +
-                          "\n                            "
-                      )
-                    ]),
-                    _vm._v(" "),
-                    _c("div", { staticClass: "col-md-2" }, [
-                      _vm._v(
-                        "\n                                " +
-                          _vm._s(collection.category.name) +
-                          "\n                            "
+                        "\n                            " +
+                          _vm._s(_vm._f("day")(collection.date)) +
+                          "\n                        "
                       )
                     ]),
                     _vm._v(" "),
                     _c("div", { staticClass: "col-md-3" }, [
                       _vm._v(
-                        "\n                                " +
+                        "\n                            " +
+                          _vm._s(collection.category.name) +
+                          "\n                        "
+                      )
+                    ]),
+                    _vm._v(" "),
+                    _c("div", { staticClass: "col-md-3" }, [
+                      _vm._v(
+                        "\n                            " +
                           _vm._s(collection.description) +
-                          "\n                            "
+                          "\n                        "
                       )
                     ]),
                     _vm._v(" "),
                     _c("div", { staticClass: "col-md-1" }, [
                       _vm._v(
-                        "\n                                " +
+                        "\n                            " +
                           _vm._s(collection.dc) +
-                          "\n                            "
+                          "\n                        "
                       )
                     ]),
                     _vm._v(" "),
-                    _c("div", { staticClass: "col-md-2" }, [
-                      _vm._v(
-                        "\n                                " +
-                          _vm._s(collection.amount) +
-                          "\n                            "
-                      )
-                    ]),
+                    _c(
+                      "div",
+                      {
+                        staticClass: "col-md-2",
+                        staticStyle: { "text-align": "right" }
+                      },
+                      [
+                        _vm._v(
+                          "\n                            " +
+                            _vm._s(_vm._f("currency")(collection.amount)) +
+                            "\n                        "
+                        )
+                      ]
+                    ),
                     _vm._v(" "),
                     _c(
                       "div",
@@ -53554,13 +53953,13 @@ var render = function() {
                             on: {
                               click: function($event) {
                                 $event.preventDefault()
-                                _vm.form.edit(index)
+                                _vm.edit(index)
                               }
                             }
                           },
                           [
                             _vm._v(
-                              "\n                                    Edit\n                                "
+                              "\n                                Edit\n                            "
                             )
                           ]
                         ),
@@ -53579,7 +53978,7 @@ var render = function() {
                           },
                           [
                             _vm._v(
-                              "\n                                    Delete\n                                "
+                              "\n                                Delete\n                            "
                             )
                           ]
                         )
@@ -53588,26 +53987,6 @@ var render = function() {
                   ]
                 )
               }),
-              _vm._v(" "),
-              _c("div", { staticClass: "row" }, [
-                _c(
-                  "div",
-                  {
-                    staticClass: "col-md-12",
-                    staticStyle: { "text-align": "center" }
-                  },
-                  [
-                    _c("span", [
-                      _vm._v(
-                        "Page " +
-                          _vm._s(_vm.form.currentPage) +
-                          " / " +
-                          _vm._s(_vm.form.lastPage)
-                      )
-                    ])
-                  ]
-                )
-              ]),
               _vm._v(" "),
               _c(
                 "div",
@@ -53626,23 +54005,24 @@ var render = function() {
                   staticClass: "row edit-row"
                 },
                 [
-                  _c("div", { staticClass: "col-md-8" }, [
-                    _c("h5", [
-                      _vm._v(
-                        "Initial Balance on " + _vm._s(this.startDate) + ": "
-                      )
-                    ]),
-                    _vm._v(" "),
-                    _c("h5", [
-                      _vm._v("Final Balance on " + _vm._s(this.endDate) + ":")
-                    ])
-                  ]),
+                  _vm._m(0),
                   _vm._v(" "),
-                  _c("div", { staticClass: "col-md-4" }, [
-                    _c("h5", [_vm._v(_vm._s(this.startBalance))]),
-                    _vm._v(" "),
-                    _c("h5", [_vm._v(_vm._s(this.endBalance))])
-                  ])
+                  _c(
+                    "div",
+                    {
+                      staticClass: "col-md-2",
+                      staticStyle: { "text-align": "right" }
+                    },
+                    [
+                      _c("h5", [
+                        _vm._v(_vm._s(_vm._f("currency")(_vm.startBalance)))
+                      ]),
+                      _vm._v(" "),
+                      _c("h5", [
+                        _vm._v(_vm._s(_vm._f("currency")(_vm.endBalance)))
+                      ])
+                    ]
+                  )
                 ]
               ),
               _vm._v(" "),
@@ -53678,9 +54058,9 @@ var render = function() {
                           "label",
                           {
                             staticClass: "control-label",
-                            attrs: { for: "date" }
+                            attrs: { for: "day" }
                           },
-                          [_vm._v("Date")]
+                          [_vm._v("Day")]
                         ),
                         _vm._v(" "),
                         _c("input", {
@@ -53688,13 +54068,13 @@ var render = function() {
                             {
                               name: "model",
                               rawName: "v-model",
-                              value: _vm.form.fields.date,
-                              expression: "form.fields.date"
+                              value: _vm.form.fields.day,
+                              expression: "form.fields.day"
                             }
                           ],
                           staticClass: "form-control",
-                          attrs: { id: "date", type: "text" },
-                          domProps: { value: _vm.form.fields.date },
+                          attrs: { id: "day", type: "text" },
+                          domProps: { value: _vm.form.fields.day },
                           on: {
                             input: function($event) {
                               if ($event.target.composing) {
@@ -53702,7 +54082,7 @@ var render = function() {
                               }
                               _vm.$set(
                                 _vm.form.fields,
-                                "date",
+                                "day",
                                 $event.target.value
                               )
                             }
@@ -53744,31 +54124,53 @@ var render = function() {
                           [_vm._v("Category")]
                         ),
                         _vm._v(" "),
-                        _c("input", {
-                          directives: [
-                            {
-                              name: "model",
-                              rawName: "v-model",
-                              value: _vm.form.fields.category_id,
-                              expression: "form.fields.category_id"
-                            }
-                          ],
-                          staticClass: "form-control",
-                          attrs: { id: "category_id", type: "text" },
-                          domProps: { value: _vm.form.fields.category_id },
-                          on: {
-                            input: function($event) {
-                              if ($event.target.composing) {
-                                return
+                        _c(
+                          "select",
+                          {
+                            directives: [
+                              {
+                                name: "model",
+                                rawName: "v-model",
+                                value: _vm.form.fields.category_id,
+                                expression: "form.fields.category_id"
                               }
-                              _vm.$set(
-                                _vm.form.fields,
-                                "category_id",
-                                $event.target.value
-                              )
+                            ],
+                            staticClass: "form-control",
+                            attrs: { id: "category_id" },
+                            on: {
+                              change: function($event) {
+                                var $$selectedVal = Array.prototype.filter
+                                  .call($event.target.options, function(o) {
+                                    return o.selected
+                                  })
+                                  .map(function(o) {
+                                    var val = "_value" in o ? o._value : o.value
+                                    return val
+                                  })
+                                _vm.$set(
+                                  _vm.form.fields,
+                                  "category_id",
+                                  $event.target.multiple
+                                    ? $$selectedVal
+                                    : $$selectedVal[0]
+                                )
+                              }
                             }
-                          }
-                        }),
+                          },
+                          _vm._l(_vm.categoriesList, function(group, groupKey) {
+                            return _c(
+                              "optgroup",
+                              { attrs: { label: groupKey } },
+                              _vm._l(group, function(category, key) {
+                                return _c(
+                                  "option",
+                                  { domProps: { value: key } },
+                                  [_vm._v(_vm._s(category))]
+                                )
+                              })
+                            )
+                          })
+                        ),
                         _vm._v(" "),
                         _c("span", {
                           directives: [
@@ -53998,6 +54400,57 @@ var render = function() {
                     ])
                   ])
                 ]
+              ),
+              _vm._v(" "),
+              _c(
+                "form",
+                {
+                  directives: [
+                    {
+                      name: "show",
+                      rawName: "v-show",
+                      value: _vm.form.deleteMode,
+                      expression: "form.deleteMode"
+                    }
+                  ],
+                  attrs: { action: "#" },
+                  on: {
+                    submit: function($event) {
+                      $event.preventDefault()
+                      _vm.confirmDelete($event)
+                    }
+                  }
+                },
+                [
+                  _vm._m(1),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "row" }, [
+                    _c("div", { staticClass: "col-md-9" }, [
+                      _c(
+                        "button",
+                        {
+                          staticClass: "btn btn-danger",
+                          attrs: { type: "submit" }
+                        },
+                        [_vm._v("Confirm")]
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "button",
+                        {
+                          staticClass: "btn btn-default",
+                          on: {
+                            click: function($event) {
+                              $event.preventDefault()
+                              _vm.form.cancel($event)
+                            }
+                          }
+                        },
+                        [_vm._v("Cancel")]
+                      )
+                    ])
+                  ])
+                ]
               )
             ],
             2
@@ -54012,8 +54465,28 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "col-md-9" }, [
-      _c("h5", [_vm._v("Finances")])
+    return _c(
+      "div",
+      { staticClass: "col-md-8", staticStyle: { "text-align": "right" } },
+      [
+        _c("h5", [_vm._v("Initial Balance")]),
+        _vm._v(" "),
+        _c("h5", [_vm._v("Final Balance")])
+      ]
+    )
+  },
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("div", { staticClass: "row edit-row" }, [
+      _c("div", { staticClass: "col-md-9" }, [
+        _c("h5", { staticStyle: { color: "#bf5329" } }, [
+          _vm._v(
+            "\n                                    Are you sure you want to delete the selected item?\n                                "
+          )
+        ])
+      ])
     ])
   }
 ]

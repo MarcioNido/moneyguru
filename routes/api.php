@@ -21,8 +21,10 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::prefix('v1')->group(function() {
 
     Route::resource('bank-accounts', 'BankAccountController');
+    Route::get('categories/dropdown', 'CategoryController@dropDown');
     Route::resource('categories', 'CategoryController');
     Route::resource('finances', 'FinanceController');
     Route::get('balances', 'BalanceController@index');
+    Route::post('balances/recalc', 'BalanceController@reCalc');
 
 });

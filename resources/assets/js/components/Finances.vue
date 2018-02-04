@@ -5,17 +5,52 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
 
-                        <div class="row">
-                            <div class="col-md-9">
-                                <h5>Finances</h5>
+                        <form action="#" @submit.prevent="filter">
+
+                            <div class="row">
+
+                                <div class="form-group col-md-3">
+                                    <label class="control-label" for="date">Bank Account</label>
+
+                                    <select v-model="filterBankAccountId" class="form-control" @change="filterChange">
+                                       <option v-for="(bankAccount, index) in bankAccountsList" v-bind:value="bankAccount.id">
+                                            {{ bankAccount.name }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label class="control-label" for="filterMonth">Month</label>
+
+                                    <select v-model="filterMonth" id="filterMonth" class="form-control" @change="filterChange">
+                                        <option v-for="(month, index) in monthList" v-bind:value="index">
+                                            {{ month }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label class="control-label" for="filterYear">Year</label>
+
+                                    <select v-model="filterYear" id="filterYear" class="form-control" @change="filterChange">
+                                        <option v-for="(year, index) in yearList" v-bind:value="index">
+                                            {{ year }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-5" style="text-align: right;">
+                                    <div style="margin-bottom: 5px;">Page {{ form.page }} / {{ form.lastPage }}</div>
+                                    <button class="btn btn-primary"
+                                            href="#" @click.prevent="form.create">
+                                        New Entry
+                                    </button>
+                                </div>
+
                             </div>
-                            <div class="col-md-3" style="text-align: right;">
-                                <button class="btn btn-primary"
-                                        href="#" @click.prevent="form.create">
-                                    New Entry
-                                </button>
-                            </div>
-                        </div>
+
+                        </form>
+
                     </div>
 
                     <div class="panel-body">
@@ -23,10 +58,10 @@
                              :class="form.deleteIndex == index ? ' list-row-delete' : ''"
                              v-for="(collection, index) in form.collection">
 
-                            <div class="col-md-2">
-                                {{ collection.date }}
+                            <div class="col-md-1">
+                                {{ collection.date | day }}
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                                 {{ collection.category.name }}
                             </div>
                             <div class="col-md-3">
@@ -35,13 +70,13 @@
                             <div class="col-md-1">
                                 {{ collection.dc }}
                             </div>
-                            <div class="col-md-2">
-                                {{ collection.amount }}
+                            <div class="col-md-2" style="text-align: right;">
+                                {{ collection.amount | currency }}
                             </div>
                             <div class="col-md-2" style="text-align: right;">
 
                                 <button class="btn btn-primary"
-                                        href="#" @click.prevent="form.edit(index)">
+                                        href="#" @click.prevent="edit(index)">
                                     Edit
                                 </button>
 
@@ -53,21 +88,14 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-12" style="text-align: center">
-                                <span>Page {{ form.currentPage }} / {{ form.lastPage }}</span>
-                            </div>
-                        </div>
-
-
                         <div class="row edit-row" v-show="form.editMode == false && form.deleteMode == false">
-                            <div class="col-md-8">
-                                <h5>Initial Balance on {{ this.startDate }}: </h5>
-                                <h5>Final Balance on {{ this.endDate }}:</h5>
+                            <div class="col-md-8" style="text-align: right;">
+                                <h5>Initial Balance</h5>
+                                <h5>Final Balance</h5>
                             </div>
-                            <div class="col-md-4">
-                                <h5>{{ this.startBalance }}</h5>
-                                <h5>{{ this.endBalance }}</h5>
+                            <div class="col-md-2" style="text-align: right">
+                                <h5>{{ startBalance | currency }}</h5>
+                                <h5>{{ endBalance | currency }}</h5>
                             </div>
                         </div>
 
@@ -78,8 +106,8 @@
                             <div class="row edit-row">
 
                                 <div class="form-group col-md-2" :class="form.errors.has('date') ? 'has-error' : ''">
-                                    <label class="control-label" for="date">Date</label>
-                                    <input id="date" type="text" class="form-control" v-model="form.fields.date">
+                                    <label class="control-label" for="day">Day</label>
+                                    <input id="day" type="text" class="form-control" v-model="form.fields.day">
 
                                     <span v-show="form.errors.has('date')"
                                           class="alert-danger"
@@ -90,7 +118,12 @@
 
                                 <div class="form-group col-md-3" :class="form.errors.has('category_id') ? 'has-error' : ''">
                                     <label class="control-label" for="category_id">Category</label>
-                                    <input id="category_id" type="text" class="form-control" v-model="form.fields.category_id">
+
+                                    <select v-model="form.fields.category_id" class="form-control" id="category_id">
+                                        <optgroup v-for="(group, groupKey) in categoriesList" :label="groupKey">
+                                            <option v-for="(category, key) in group" :value="key">{{ category }}</option>
+                                        </optgroup>
+                                    </select>
 
                                     <span v-show="form.errors.has('category_id')"
                                           class="alert-danger"
@@ -142,8 +175,7 @@
                         <!-- edit form end -->
 
                         <!-- delete form begin -->
-<!--
-                        <form action="#" v-show="form.deleteMode" @submit.prevent="form.confirmDelete">
+                        <form action="#" v-show="form.deleteMode" @submit.prevent="confirmDelete">
                             <div class="row edit-row">
                                 <div class="col-md-9">
                                     <h5 style="color: #bf5329;">
@@ -175,11 +207,20 @@
 
         data() {
             return {
-                form: new Form(),
-                startDate: moment().startOf('month').format('YYYY-MM-DD'),
-                startBalance: null,
-                endDate: moment().endOf('month').format('YYYY-MM-DD'),
-                endBalance: null,
+                form:           new Form(),
+                startDate:      moment().startOf('month').format('YYYY-MM-DD'),
+                endDate:        moment().endOf('month').format('YYYY-MM-DD'),
+                startBalance:   null,
+                endBalance:     null,
+
+                bankAccountsList: null,
+                categoriesList: null,
+                monthList:      null,
+                yearList:       null,
+
+                filterBankAccountId: 1,
+                filterMonth:    moment().format('MM'),
+                filterYear:     moment().format('YYYY'),
             };
         },
 
@@ -195,44 +236,62 @@
                 dc: null,
                 date: null,
                 amount: null,
+                day:null,
             };
 
             this.bankAccountId = 1;
+            this.filterChange();
+            this.initialBalance();
+            this.finalBalance();
 
-            this.form.list();
+//            window.addEventListener('keyup', this.navigate);
 
-            this.balance();
-
-            window.addEventListener('keyup', this.navigate);
+            this.loadBankAccountsList();
+            this.loadCategoriesList();
+            this.loadMonthList();
+            this.loadYearList();
 
         },
 
         methods: {
+//
+//            navigate: function (event) {
+//                console.log('Key Pressed: ' + event.key);
+//
+//                if (this.form.editMode == false) {
+//                    if (event.key == 'PageDown') {
+//                        this.form.nextPage();
+//                    }
+//
+//                    if (event.key == 'PageUp') {
+//                        this.form.prevPage();
+//                    }
+//                }
+//
+//            },
 
-            navigate: function (event) {
-                console.log('Key Pressed: ' + event.key);
+            edit(index)
+            {
+                this.form.cancel();
 
-                if (this.form.editMode == false) {
-                    if (event.key == 'PageDown') {
-                        if (this.form.currentPage < this.form.lastPage) {
-                            this.form.nextPage();
-                        } else {
-                            window.alert('Last Page');
-                        }
-                    }
+                this.form.editMode = true;
+                this.form.editIndex = index;
 
-                    if (event.key == 'PageUp') {
-                        if (this.form.currentPage > 1) {
-                            this.form.prevPage();
-                        } else {
-                            window.alert('First Page');
-                        }
-                    }
-                }
+                var _self = this;
+                Object.keys(this.form.fields).map(function(key) {
+                    _self.form.fields[key] = _self.form.collection[index][key];
+                })
+
+                this.form.fields.day = moment(this.form.fields.date).format('DD');
 
             },
 
+
             save() {
+
+                // append month and year to the date
+                this.form.fields.date = this.filterYear + '-' + this.filterMonth + '-' + this.form.fields.day;
+                this.form.fields.bank_account_id = this.filterBankAccountId;
 
                 if (this.form.editIndex !== null) { // update
 
@@ -240,6 +299,7 @@
                         .then(response => {
                             this.form.editMode = false;
                             this.form.collection[this.form.editIndex] = response.data;
+                            this.finalBalance();
                         })
                         .catch(error => {
                             this.form.errors.set(error.response.data);
@@ -251,30 +311,159 @@
                         .then(response => {
                             this.form.collection.push(response.data);
                             this.form.editMode = false;
+                            this.finalBalance();
                         })
                         .catch(error => {
                             this.form.errors.set(error.response.data);
                         });
 
                 }
+
+
+            },
+
+            initialBalance()
+            {
+                console.log('initial balance: ' + this.startDate);
+
+                var date = moment(this.startDate).subtract(1, 'days').format('YYYY-MM-DD');
+                console.log('balance initial date: ' + date);
+                this.balance(date)
+                    .then(data => {
+                        console.log(data);
+                        this.startBalance = data[0].balance;
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    })
+            },
+
+            finalBalance()
+            {
+                console.log('final balance: ' + this.endDate);
+                this.balance(this.endDate)
+                    .then(data => {
+                        this.endBalance = data[0].balance;
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            },
+
+            balance(date)
+            {
+                return new Promise((resolve, reject) => {
+                    axios.get('api/v1/balances', {
+                        params: {
+                            filter: {
+                                bank_account_id: this.bankAccountId,
+                                date: date,
+                            }
+                        }
+                    }).then(response => {
+                        resolve(response.data);
+                    }).catch(error => {
+                        reject(error.response.data);
+                    });
+                });
             },
 
 
-            balance()
+            loadBankAccountsList()
             {
+                axios.get('api/v1/bank-accounts')
+                    .then(response => {
+                        this.bankAccountsList = response.data.data
+                    })
+                    .catch(error => {
+                        console.log(error.response.data);
+                    });
+            },
 
-                var self = this;
-                axios.get('api/v1/balances', {
-                    params: {
-                        filter: {
-                            bank_account_id: self.bankAccountId,
-                            date: moment(self.startDate).subtract(1, 'days').format('YYYY-MM-DD'),
-                        }
-                    }
-                }).then(response => {
-                    console.log(response);
-                });
+            loadCategoriesList()
+            {
+                axios.get('api/v1/categories/dropdown')
+                    .then(response => {
+                        this.categoriesList = response.data.data;
+                    })
+                    .catch(error => {
+                        console.log(error.response.data);
+                    });
+            },
 
+            loadMonthList()
+            {
+                this.monthList = {
+                    '01': 'January',
+                    '02': 'February',
+                    '03': 'March',
+                    '04': 'April',
+                    '05': 'May',
+                    '06': 'June',
+                    '07': 'July',
+                    '08': 'August',
+                    '09': 'September',
+                    '10': 'October',
+                    '11': 'November',
+                    '12': 'December',
+                }
+            },
+
+            loadYearList()
+            {
+                this.yearList = {
+                    2017: 2017,
+                    2018: 2018,
+                    2019: 2019,
+                    2020: 2020,
+                    2021: 2021,
+                    2022: 2022,
+                }
+            },
+
+            filterChange()
+            {
+                this.form.filter = {
+                    'bank_account_id': this.filterBankAccountId,
+                    'start_date': moment(this.filterYear + '-' + this.filterMonth).startOf('month').format('YYYY-MM-DD'),
+                    'end_date': moment(this.filterYear + '-' + this.filterMonth).endOf('month').format('YYYY-MM-DD'),
+                };
+                this.form.page = 1;
+                this.form.list();
+            },
+
+
+
+            confirmDelete()
+            {
+                axios.delete(this.form.resource + '/' + this.form.fields[this.form.key])
+                    .then(response => {
+                        this.form.collection.splice(this.form.deleteIndex, 1);
+                        this.form.cancel();
+                        this.finalBalance();
+                    })
+                    .catch(error => {
+                        console.log(error.response.data);
+                    });
+            }
+
+
+
+        },
+
+        filters: {
+
+            day: function(value) {
+                return moment(value).format('DD');
+            },
+
+            currency: function(value) {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(value);
             }
 
         }
@@ -295,5 +484,8 @@
     }
     div.list-row.list-row-delete {
         color: #bf5329;
+    }
+    .btn {
+        padding: 1px 12px;
     }
 </style>
