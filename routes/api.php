@@ -27,4 +27,9 @@ Route::prefix('v1')->group(function() {
     Route::get('balances', 'BalanceController@index');
     Route::post('balances/recalc', 'BalanceController@reCalc');
 
+    Route::get('charts/revExp', 'ChartController@revExp');
+    Route::get('charts/revCategory', 'ChartController@revCategory');
+    Route::get('charts/expCategory', 'ChartController@expCategory');
+    Route::get('charts/patrimony', 'ChartController@patrimony');
+
 });

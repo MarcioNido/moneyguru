@@ -44,6 +44,7 @@ class BankAccountController extends Controller
         $request->validate(BankAccount::$validationRules);
 
         $bankAccount->name = $request->get('name');
+        $bankAccount->real = $request->get('real') ? 1 : 0;
         $bankAccount->saveOrFail();
         return $bankAccount;
 

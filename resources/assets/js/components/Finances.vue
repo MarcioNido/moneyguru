@@ -356,7 +356,7 @@
                     axios.get('api/v1/balances', {
                         params: {
                             filter: {
-                                bank_account_id: this.bankAccountId,
+                                bank_account_id: this.filterBankAccountId,
                                 date: date,
                             }
                         }
@@ -430,6 +430,8 @@
                 };
                 this.form.page = 1;
                 this.form.list();
+                this.initialBalance();
+                this.finalBalance();
             },
 
 

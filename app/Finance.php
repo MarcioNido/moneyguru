@@ -9,7 +9,7 @@ class Finance extends Model
 {
     use SoftDeletes;
 
-    protected $dates = ['deleted_at'];
+    protected $dates = ['deleted_at', 'date'];
 
     protected $fillable = [
         'bank_account_id',

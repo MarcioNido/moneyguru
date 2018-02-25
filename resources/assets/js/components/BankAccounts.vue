@@ -38,6 +38,12 @@
                                     </span>
 
                                 </div>
+
+                                <div class="form-group col-md-3" :class="form.errors.has('real') ? 'has-error' : ''">
+                                    <label for="real" class="control-label">Em Reais</label>
+                                    <input id="real" class="form-control" type="checkbox" value="1" v-model="form.fields.real">
+                                </div>
+
                             </div>
                             <div class="row">
                                 <div class="col-md-3">
@@ -91,6 +97,7 @@
             this.form.fields = {
                 id: null,
                 name: "",
+                real: 0,
             };
 
             this.form.list();
