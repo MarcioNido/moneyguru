@@ -16,7 +16,10 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        return Category::paginate(10);
+        return Category::orderBy('level1')
+            ->orderBy('level2')
+            ->orderBy('level3')
+            ->paginate(10);
     }
 
 
@@ -37,7 +40,9 @@ class CategoryController extends Controller
 
             foreach($level2 as $l2) {
 
-                $level3 = Category::where('level1', $l2->level1)->where('level2', $l2->level2)->where('level3', '<>', 0)->orderBy('level3')->get();
+                $level3 = Category::where('level1', $l2->level1)
+                    ->where('level2', $l2->level2)
+                    ->where('level3', '<>', 0)->orderBy('level3')->get();
 
                 foreach ($level3 as $l3) {
 
