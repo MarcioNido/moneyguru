@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\BankAccount;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class BankAccountController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return BankAccount
      */
     public function store(Request $request)
@@ -35,9 +36,10 @@ class BankAccountController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\BankAccount  $bankAccount
+     * @param Request $request
+     * @param BankAccount $bankAccount
      * @return BankAccount
+     * @throws \Throwable
      */
     public function update(Request $request, BankAccount $bankAccount)
     {
@@ -53,8 +55,9 @@ class BankAccountController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\BankAccount  $bankAccount
+     * @param BankAccount $bankAccount
      * @return JsonResponse
+     * @throws Exception
      */
     public function destroy(BankAccount $bankAccount)
     {
