@@ -12,7 +12,7 @@ use PHPUnit\Util\Json;
 class ChartController extends Controller
 {
 
-    const REAL_X_DOLLAR = 2.80;
+    const REAL_X_DOLLAR = 3.20;
 
     /**
      * Revenue X Expenses Comparison Chart

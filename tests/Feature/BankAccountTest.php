@@ -11,6 +11,12 @@ class BankAccountTest extends TestCase
     use DatabaseMigrations;
 
     /** @test */
+    public function a_user_can_run_tests()
+    {
+        $this->assertTrue(true);
+    }
+
+    /** @test */
     public function a_user_can_list_all_bank_accounts()
     {
 
